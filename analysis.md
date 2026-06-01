@@ -20,8 +20,8 @@ Credit Risk Modeling & Gender Fairness in Loan Approvals
 
 This project builds a logistic regression model to predict credit risk
 using the German Credit dataset, then examines whether a single decision
-threshold treats male and female applicants fairly — and what happens
-when you adjust for that.
+threshold treats male and female applicants fairly and what happens when
+you adjust for that.
 
 The dataset has 1,000 loan applicants with features like loan duration,
 credit history, savings, employment status, and age. The target variable
@@ -85,8 +85,8 @@ knitr::kable(gender_summary, caption = "Gender breakdown and average credit risk
 Gender breakdown and average credit risk
 
 Males make up 69% of the dataset and have a slightly higher average
-credit risk score (0.723 vs 0.648). This imbalance matters — it will
-show up in how the model behaves across groups.
+credit risk score (0.723 vs 0.648). This imbalance matters because it
+will show up in how the model behaves across groups.
 
 ------------------------------------------------------------------------
 
@@ -202,7 +202,7 @@ predicted.class   <- (train$pred_prob >= 0.5) * 1
 actual.class      <- train$credit_risk
 
 cm <- table(Actual = actual.class, Predicted = predicted.class)
-knitr::kable(cm, caption = "Confusion matrix — training set, threshold = 0.5")
+knitr::kable(cm, caption = "Confusion matrix, training set, threshold = 0.5")
 ```
 
 |     |   0 |   1 |
@@ -210,7 +210,7 @@ knitr::kable(cm, caption = "Confusion matrix — training set, threshold = 0.5")
 | 0   |  98 |  81 |
 | 1   |  43 | 378 |
 
-Confusion matrix — training set, threshold = 0.5
+Confusion matrix, training set, threshold = 0.5
 
 ``` r
 overall.error <- sum(actual.class != predicted.class) / nrow(train)
@@ -276,8 +276,8 @@ ggplot(fairness_long, aes(x = Group, y = Value, fill = Group)) +
 
 ![](analysis_files/figure-gfm/fairness-bar-1.png)<!-- -->
 
-The gap is visible — males get approved at 80% vs females at 68%, and
-the TPR gap is about 5 percentage points.
+The gap is visible. Males get approved at 80% vs females at 68%, and the
+TPR gap is about 5 percentage points.
 
 ------------------------------------------------------------------------
 
@@ -302,18 +302,18 @@ ggplot(train, aes(x = pred_prob, fill = gender, color = gender)) +
 
 ![](analysis_files/figure-gfm/density-plot-1.png)<!-- -->
 
-The female distribution is shifted left — the model assigns lower
+The female distribution is shifted left, meaning the model assigns lower
 probabilities to females on average. A single cutoff at 0.5 therefore
-catches fewer females in the “approved” bucket, even among genuinely
+catches fewer females in the approved bucket, even among genuinely
 creditworthy ones.
 
 ------------------------------------------------------------------------
 
 ## Optimizing thresholds for fairness
 
-The goal: find a pair of thresholds (one for males, one for females)
-such that TPR_Male ≈ TPR_Female (within 0.1%), while minimizing overall
-error.
+The goal is to find a pair of thresholds (one for males, one for
+females) where TPR_Male and TPR_Female are within 0.1% of each other
+while keeping overall error as low as possible.
 
 ``` r
 TPR_Male_vec   <- matrix(0, 1, 100)
@@ -346,10 +346,10 @@ for (c_m in 1:100) {
   }
 }
 
-cat("Optimal thresholds — Male:", thresholds_pair[1], "| Female:", thresholds_pair[2])
+cat("Optimal thresholds - Male:", thresholds_pair[1], "| Female:", thresholds_pair[2])
 ```
 
-    ## Optimal thresholds — Male: 0.42 | Female: 0.34
+    ## Optimal thresholds - Male: 0.42 | Female: 0.34
 
 ``` r
 cat("\nMinimum overall error:", round(min_overall.error, 4))
@@ -449,11 +449,11 @@ Fairness metrics on test set with optimized thresholds
 | Female threshold        | 0.50                   | 0.34                 |
 | TPR gap (Male - Female) | ~5 pp                  | \< 0.1 pp            |
 | Overall error (train)   | 20.7%                  | 20.8%                |
-| Overall error (test)    | —                      | 24.8%                |
+| Overall error (test)    | not evaluated          | 24.8%                |
 
 Using group-specific thresholds closes the TPR gap almost entirely at a
 cost of less than 0.2 percentage points in overall accuracy. The
-tradeoff is real but small — and the fairness gain is significant.
+tradeoff is small and the fairness gain is significant.
 
 This approach is sometimes called **equalized opportunity**: equalizing
 TPR across groups rather than using a single threshold that
