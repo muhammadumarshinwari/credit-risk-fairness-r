@@ -61,6 +61,63 @@ summary(model)
 ```{r coef-plot}
 library(ggplot2)
 
+# Mapping from R's auto-generated dummy variable names to readable labels
+# These codes come from the German Credit Data dictionary
+label_map <- c(
+  "statusA11"                    = "Checking account: overdrawn (< 0 DM)",
+  "statusA12"                    = "Checking account: low balance (0-200 DM)",
+  "statusA13"                    = "Checking account: healthy (>= 200 DM)",
+  "statusA14"                    = "No checking account",
+  "credit_historyA30"            = "Credit history: no credits taken",
+  "credit_historyA31"            = "Credit history: all credits paid back",
+  "credit_historyA32"            = "Credit history: existing credits paid back",
+  "credit_historyA33"            = "Credit history: past payment delays",
+  "credit_historyA34"            = "Credit history: critical / other bank credits",
+  "purposeA40"                   = "Purpose: new car",
+  "purposeA41"                   = "Purpose: used car",
+  "purposeA42"                   = "Purpose: furniture",
+  "purposeA43"                   = "Purpose: radio or TV",
+  "purposeA46"                   = "Purpose: education",
+  "purposeA48"                   = "Purpose: retraining",
+  "purposeA49"                   = "Purpose: business",
+  "savingsA61"                   = "Savings: under 100 DM",
+  "savingsA62"                   = "Savings: 100-500 DM",
+  "savingsA63"                   = "Savings: 500-1000 DM",
+  "savingsA64"                   = "Savings: over 1000 DM",
+  "savingsA65"                   = "Savings: unknown or none",
+  "employmentA71"                = "Employment: unemployed",
+  "employmentA72"                = "Employment: less than 1 year",
+  "employmentA73"                = "Employment: 1 to 4 years",
+  "employmentA74"                = "Employment: 4 to 7 years",
+  "employmentA75"                = "Employment: 7 or more years",
+  "other_debtorsA102"            = "Other debtors: co-applicant",
+  "other_debtorsA103"            = "Other debtors: guarantor",
+  "propertyA121"                 = "Property: real estate",
+  "propertyA122"                 = "Property: life insurance / savings agreement",
+  "propertyA123"                 = "Property: car or other asset",
+  "propertyA124"                 = "Property: unknown or none",
+  "other_installment_plansA141"  = "Other installment plans: at a bank",
+  "other_installment_plansA142"  = "Other installment plans: at a store",
+  "other_installment_plansA143"  = "No other installment plans",
+  "housingA151"                  = "Housing: renting",
+  "housingA152"                  = "Housing: owns home",
+  "housingA153"                  = "Housing: free (no cost)",
+  "jobA171"                      = "Job: unskilled, non-resident",
+  "jobA172"                      = "Job: unskilled, resident",
+  "jobA173"                      = "Job: skilled employee",
+  "jobA174"                      = "Job: management or self-employed",
+  "telephoneA192"                = "Has registered telephone",
+  "foreign_workerA202"           = "Not a foreign worker",
+  "genderMale"                   = "Gender: male",
+  "duration"                     = "Loan duration (months)",
+  "amount"                       = "Loan amount (DM)",
+  "installment_rate"             = "Installment rate (% of income)",
+  "residence"                    = "Years at current residence",
+  "age"                          = "Age (years)",
+  "existing_credits"             = "Number of existing credits at this bank",
+  "num_people_liable"            = "Number of people financially dependent on applicant"
+)
+
 coef_df <- as.data.frame(summary(model)$coefficients)
 coef_df$Variable <- rownames(coef_df)
 coef_df <- coef_df[coef_df$Variable != "(Intercept)", ]
@@ -68,14 +125,21 @@ coef_df$Significant <- coef_df$`Pr(>|z|)` < 0.05
 coef_df <- coef_df[order(abs(coef_df$Estimate), decreasing = TRUE), ]
 coef_df <- head(coef_df, 20)
 
-ggplot(coef_df, aes(x = reorder(Variable, Estimate), y = Estimate, fill = Significant)) +
+# Apply readable labels where available, keep original name if not in map
+coef_df$Label <- ifelse(coef_df$Variable %in% names(label_map),
+                        label_map[coef_df$Variable],
+                        coef_df$Variable)
+
+ggplot(coef_df, aes(x = reorder(Label, Estimate), y = Estimate, fill = Significant)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   scale_fill_manual(values = c("FALSE" = "grey70", "TRUE" = "#2c7bb6")) +
   labs(title = "Top 20 Logistic Regression Coefficients",
+       subtitle = "Blue = statistically significant (p < 0.05). Positive values increase the probability of good credit risk.",
        x = NULL, y = "Coefficient Estimate",
        fill = "Significant (p < 0.05)") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.subtitle = element_text(size = 9, color = "grey40"))
 ```
 
 ---
